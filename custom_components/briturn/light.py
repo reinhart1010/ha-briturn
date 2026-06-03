@@ -98,6 +98,7 @@ class BriturnLight(LightEntity):
 
         try:
             if rgb is not None:
+                # Automatically infer brightness from the given (scaled) RGB values
                 self._attr_brightness = max(max(rgb), 1)  # Avoid division by zero
                 self._attr_rgb_color = tuple(int(c * 255 / self._attr_brightness) for c in rgb) # type: ignore[assignment]
                 self._attr_color_mode = ColorMode.RGB
@@ -158,7 +159,7 @@ class BriturnLight(LightEntity):
         if state.is_rgb_mode:
             self._attr_color_mode = ColorMode.RGB
             if any(state.rgb):
-                # Auto-calculate brightness if there are no change in brightness on the event
+                # Automatically infer brightness from the given (scaled) RGB values
                 self._attr_brightness = max(max(state.rgb), 1) # Avoid division by zero
                 self._attr_rgb_color = tuple(int(c * 255 / self._attr_brightness) for c in state.rgb) # type: ignore[assignment]
         else:
