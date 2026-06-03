@@ -157,7 +157,7 @@ class BriturnLight(LightEntity):
             self._attr_rgb_color = state.rgb
             if any(state.rgb):
                 # Auto-calculate brightness if there are no change in brightness on the event
-                if state.brightness:
+                if state.brightness == self._attr_brightness:
                     self._unscaled_rgb = state.rgb
                 else:
                     self._attr_brightness = max(state.rgb)
