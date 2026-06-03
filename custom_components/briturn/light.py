@@ -81,10 +81,9 @@ class BriturnLight(LightEntity):
         self._attr_is_on = False
         self._attr_brightness = 255
         self._attr_color_mode = ColorMode.COLOR_TEMP
-        self._attr_rgb_color = (255, 255, 255)
+        self._attr_rgb_color: tuple[int, int, int] = (255, 255, 255)
         self._attr_color_temp_kelvin = (MIN_KELVIN + MAX_KELVIN) // 2
         self._attr_available = False
-        self._unscaled_rgb: tuple[int, int, int] = (255, 255, 255)
         self._attr_device_info = DeviceInfo(
             identifiers={(DOMAIN, entry_id)},
             name=name,
@@ -100,10 +99,9 @@ class BriturnLight(LightEntity):
         try:
             if rgb is not None:
                 self._attr_brightness = max(max(rgb), 1)  # Avoid division by zero
-                self._unscaled_rgb = tuple(int(c * 255 / self._attr_brightness) for c in rgb)  # type: ignore[assignment]
-                self._attr_rgb_color = self._unscaled_rgb
+                self._attr_rgb_color = tuple(int(c * 255 / self._attr_brightness) for c in rgb) # type: ignore[assignment]
                 self._attr_color_mode = ColorMode.RGB
-                await async_send_rgb(self._host, *_scale_rgb(self._unscaled_rgb, brightness))
+                await async_send_rgb(self._host, *_scale_rgb(self._attr_rgb_color, brightness))
             elif kelvin is not None:
                 self._attr_color_temp_kelvin = int(kelvin)
                 self._attr_color_mode = ColorMode.COLOR_TEMP
@@ -112,7 +110,7 @@ class BriturnLight(LightEntity):
             else:
                 # No color specified — re-issue current color at the new brightness.
                 if self._attr_color_mode == ColorMode.RGB:
-                    await async_send_rgb(self._host, *_scale_rgb(self._unscaled_rgb, brightness))
+                    await async_send_rgb(self._host, *_scale_rgb(self._attr_rgb_color, brightness))
                 else:
                     ww, cw = _kelvin_to_ww_cw(
                         self._attr_color_temp_kelvin or (MIN_KELVIN + MAX_KELVIN) // 2,
@@ -127,6 +125,8 @@ class BriturnLight(LightEntity):
         except (OSError, TimeoutError) as err:
             _LOGGER.warning("briturn %s turn_on failed: %s", self._host, err)
             self._attr_available = False
+        finally:
+            self.async_schedule_update_ha_state(force_refresh=True)
 
     async def async_turn_off(self, **kwargs: Any) -> None:
         try:
@@ -136,6 +136,8 @@ class BriturnLight(LightEntity):
         except (OSError, TimeoutError) as err:
             _LOGGER.warning("briturn %s turn_off failed: %s", self._host, err)
             self._attr_available = False
+        finally:
+            self.async_schedule_update_ha_state(force_refresh=True)
 
     async def async_update(self) -> None:
         try:
@@ -155,11 +157,10 @@ class BriturnLight(LightEntity):
             self._attr_brightness = state.brightness
         if state.is_rgb_mode:
             self._attr_color_mode = ColorMode.RGB
-            self._attr_rgb_color = tuple(int(c * 255 / self._attr_brightness) for c in state.rgb)
             if any(state.rgb):
                 # Auto-calculate brightness if there are no change in brightness on the event
                 self._attr_brightness = max(max(state.rgb), 1) # Avoid division by zero
-                self._unscaled_rgb = tuple(int(c * 255 / self._attr_brightness) for c in state.rgb)  # type: ignore[assignment]
+                self._attr_rgb_color = tuple(int(c * 255 / self._attr_brightness) for c in state.rgb) # type: ignore[assignment]
         else:
             self._attr_color_mode = ColorMode.COLOR_TEMP
             self._attr_color_temp_kelvin = _ww_cw_to_kelvin(state.ww, state.cw)
