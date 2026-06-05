@@ -26,12 +26,8 @@ class BriturnConfigFlow(ConfigFlow, domain=DOMAIN):
 
         await self.async_set_unique_id(host)
 
-        if reconfigure:
-            # Prevent changing this config entry into a different unique device.
-            self._abort_if_unique_id_mismatch(reason="wrong_device")
-        else:
-            # Prevent adding the same host/device twice.
-            self._abort_if_unique_id_configured()
+        # Prevent adding the same host/device twice.
+        self._abort_if_unique_id_configured()
 
         state = None
         try:
