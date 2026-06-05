@@ -127,7 +127,8 @@ class BriturnLight(LightEntity):
             _LOGGER.warning("briturn %s turn_on failed: %s", self._host, err)
             self._attr_available = False
         finally:
-            self.async_schedule_update_ha_state(force_refresh=True)
+            await self.async_update()
+            self.async_write_ha_state()
 
     async def async_turn_off(self, **kwargs: Any) -> None:
         try:
@@ -138,7 +139,8 @@ class BriturnLight(LightEntity):
             _LOGGER.warning("briturn %s turn_off failed: %s", self._host, err)
             self._attr_available = False
         finally:
-            self.async_schedule_update_ha_state(force_refresh=True)
+            await self.async_update()
+            self.async_write_ha_state()
 
     async def async_update(self) -> None:
         try:
